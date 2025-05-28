@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Playfair Cipher</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        .playfair-matrix-table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 10px;
+            margin-bottom: 20px;
+        }
+        .playfair-matrix-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <table class="table">
+            <tr><td style="text-align: center; font-weight: bold; font-size: 25px;">PLAYFAIR CIPHER</td></tr>
+
+            <tr><td style="font-weight: bold; color: blue;">CREATE MATRIX</td></tr>
+            <tr>
+                <td>
+                    <div class="mb-3">
+                        <label for="keyMatrixInput" class="form-label">Key:</label>
+                        <input type="text" class="form-control" id="keyMatrixInput" placeholder="Input Key" required autofocus/>
+                    </div>
+                    <button type="button" class="btn btn-secondary" onclick="createPlayfairMatrix()">Create Matrix</button>
+                    <div class="mt-3">
+                        <label class="form-label">Key Matrix (I/J combined):</label>
+                        <div id="playfairMatrixDisplay"></div>
+                    </div>
+                </td>
+            </tr>
+
+            <tr><td style="font-weight: bold; color: blue;">ENCRYPTION</td></tr>
+            <tr>
+                <td>
+                    <div class="mb-3">
+                        <label for="plainTextPlayfair" class="form-label">Plain text:</label>
+                        <input type="text" class="form-control" id="plainTextPlayfair" placeholder="Input Plain Text" required/>
+                    </div>
+                    <div class="mb-3">
+                        <label for="keyEncryptPlayfair" class="form-label">Key:</label>
+                        <input type="text" class="form-control" id="keyEncryptPlayfair" placeholder="Input Key" required/>
+                    </div>
+                    <button type="button" class="btn btn-primary" onclick="encryptPlayfair()">Encrypt</button>
+                    <div class="mt-3">
+                        <label for="encryptedResultPlayfair" class="form-label">Encrypted Text:</label>
+                        <textarea class="form-control" id="encryptedResultPlayfair" rows="3" readonly></textarea>
+                    </div>
+                </td>
+            </tr>
+
+            <tr><td style="font-weight: bold; color: blue;">DECRYPTION</td></tr>
+            <tr>
+                <td>
+                    <div class="mb-3">
+                        <label for="cipherTextPlayfair" class="form-label">Cipher text:</label>
+                        <input type="text" class="form-control" id="cipherTextPlayfair" placeholder="Input Cipher Text" required/>
+                    </div>
+                    <div class="mb-3">
+                        <label for="keyDecryptPlayfair" class="form-label">Key:</label>
+                        <input type="text" class="form-control" id="keyDecryptPlayfair" placeholder="Input Key" required/>
+                    </div>
+                    <button type="button" class="btn btn-success" onclick="decryptPlayfair()">Decrypt</button>
+                    <div class="mt-3">
+                        <label for="decryptedResultPlayfair" class="form-label">Decrypted Text:</label>
+                        <textarea class="form-control" id="decryptedResultPlayfair" rows="3" readonly></textarea>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <script>
+        const ALPHABET = "ABCDEFGHIKLMNOPQRSTUVWXYZ"; // Note: J is omitted, I/J treated as I
+        let playfairMatrix = []; // Global variable to store the generated matrix
+
+        /**
+         * Cleans and processes the key for Playfair matrix generation.
+         * - Converts to uppercase.
+         * - Replaces 'J' with 'I'.
+         * - Removes duplicate letters, maintaining order.
+         * @param {string} key
+         * @returns {string} Cleaned key string.
+         */
+        function cleanKey(key) {
+            key = key.toUpperCase().replace(/J/g, 'I').replace(/[^A-Z]/g, '');
+            let cleaned = '';
+            for (let i = 0; i < key.length; i++) {
+                if (cleaned.indexOf(key[i]) === -1) {
+                    cleaned += key[i];
+                }
+            }
+            return cleaned;
+        }
+
+        /**
+         * Creates the 5x5 Playfair matrix from a key.
+         * @param {string} key
+         * @returns {Array<Array<string>>} The 5x5 Playfair matrix.
+         */
+        function generatePlayfairMatrix(key) {
+            const cleanedKey = cleanKey(key);
+            let matrix = [];
+            let usedLetters = cleanedKey;
+            let currentAlphabet = ALPHABET;
+
+            // Fill matrix with key letters
+            for (let i = 0; i < cleanedKey.length; i++) {
+                matrix.push(cleanedKey[i]);
+            }
+
+            // Fill remaining matrix with unique alphabet letters
+            for (let i = 0; i < currentAlphabet.length; i++) {
+                if (usedLetters.indexOf(currentAlphabet[i]) === -1) {
+                    matrix.push(currentAlphabet[i]);
+                    usedLetters += currentAlphabet[i];
+                }
+            }
+
+            // Reshape into 5x5 grid
+            const grid = [];
+            for (let i = 0; i < 5; i++) {
+                grid.push(matrix.slice(i * 5, (i + 1) * 5));
+            }
+            return grid;
+        }
+
+        /**
+         * Displays the generated Playfair matrix in an HTML table.
+         * @param {Array<Array<string>>} matrix
+         */
+        function displayMatrix(matrix) {
+            const displayDiv = document.getElementById('playfairMatrixDisplay');
+            if (!matrix || matrix.length === 0) {
+                displayDiv.innerHTML = '<p class="text-danger">Invalid Key Matrix.</p>';
+                return;
+            }
+
+            let tableHtml = '<table class="playfair-matrix-table">';
+            for (let r = 0; r < 5; r++) {
+                tableHtml += '<tr>';
+                for (let c = 0; c < 5; c++) {
+                    tableHtml += `<td>${matrix[r][c]}</td>`;
+                }
+                tableHtml += '</tr>';
+            }
+            tableHtml += '</table>';
+            displayDiv.innerHTML = tableHtml;
+        }
+
+        /**
+         * Event handler for creating and displaying the Playfair matrix.
+         */
+        function createPlayfairMatrix() {
+            const key = document.getElementById('keyMatrixInput').value;
+            if (key) {
+                playfairMatrix = generatePlayfairMatrix(key);
+                displayMatrix(playfairMatrix);
+
+                // Auto-fill encryption/decryption keys
+                document.getElementById('keyEncryptPlayfair').value = key;
+                document.getElementById('keyDecryptPlayfair').value = key;
+            } else {
+                alert("Please enter a key to create the matrix.");
+                document.getElementById('playfairMatrixDisplay').innerHTML = '';
+            }
+        }
+
+        /**
+         * Finds the row and column of a character in the Playfair matrix.
+         * @param {string} char
+         * @param {Array<Array<string>>} matrix
+         * @returns {Array<number>} [row, col] or null if not found.
+         */
+        function findCharPosition(char, matrix) {
+            for (let r = 0; r < 5; r++) {
+                for (let c = 0; c < 5; c++) {
+                    if (matrix[r][c] === char) {
+                        return [r, c];
+                    }
+                }
+            }
+            return null; // Should not happen with valid alphabet
+        }
+
+        /**
+         * Preprocesses plaintext for Playfair encryption.
+         * - Converts to uppercase, replaces J with I, removes non-alphabetic.
+         * - Splits into digraphs, handles double letters with filler 'X'.
+         * - Adds filler 'X' if final length is odd.
+         * @param {string} text
+         * @returns {Array<string>} Array of digraphs.
+         */
+        function preprocessPlaintext(text) {
+            let processedText = text.toUpperCase().replace(/J/g, 'I').replace(/[^A-Z]/g, '');
+            let digraphs = [];
+
+            for (let i = 0; i < processedText.length; i += 2) {
+                let char1 = processedText[i];
+                let char2 = (i + 1 < processedText.length) ? processedText[i + 1] : '';
+
+                if (char1 === char2) {
+                    digraphs.push(char1 + 'X');
+                    i--; // Re-process the second identical character
+                } else if (char2 === '') {
+                    digraphs.push(char1 + 'X'); // Add filler for odd length
+                } else {
+                    digraphs.push(char1 + char2);
+                }
+            }
+            return digraphs;
+        }
+
+        /**
+         * Encrypts plaintext using the Playfair cipher.
+         */
+        function encryptPlayfair() {
+            const plainText = document.getElementById('plainTextPlayfair').value;
+            const key = document.getElementById('keyEncryptPlayfair').value;
+
+            if (!key) {
+                alert("Please enter a key for encryption.");
+                document.getElementById('encryptedResultPlayfair').value = "";
+                return;
+            }
+
+            // Ensure matrix is generated for this key
+            playfairMatrix = generatePlayfairMatrix(key);
+            displayMatrix(playfairMatrix); // Update matrix display
+
+            const digraphs = preprocessPlaintext(plainText);
+            let cipherText = [];
+
+            for (const digraph of digraphs) {
+                const char1 = digraph[0];
+                const char2 = digraph[1];
+
+                const [r1, c1] = findCharPosition(char1, playfairMatrix);
+                const [r2, c2] = findCharPosition(char2, playfairMatrix);
+
+                if (r1 === r2) { // Same row
+                    cipherText.push(playfairMatrix[r1][(c1 + 1) % 5]);
+                    cipherText.push(playfairMatrix[r2][(c2 + 1) % 5]);
+                } else if (c1 === c2) { // Same column
+                    cipherText.push(playfairMatrix[(r1 + 1) % 5][c1]);
+                    cipherText.push(playfairMatrix[(r2 + 1) % 5][c2]);
+                } else { // Rectangle
+                    cipherText.push(playfairMatrix[r1][c2]);
+                    cipherText.push(playfairMatrix[r2][c1]);
+                }
+            }
+            const result = cipherText.join("");
+            document.getElementById('encryptedResultPlayfair').value = result;
+
+            // Auto-fill decryption fields
+            document.getElementById('cipherTextPlayfair').value = result;
+            document.getElementById('keyDecryptPlayfair').value = key;
+        }
+
+        /**
+         * Decrypts ciphertext using the Playfair cipher.
+         */
+        function decryptPlayfair() {
+            const cipherText = document.getElementById('cipherTextPlayfair').value;
+            const key = document.getElementById('keyDecryptPlayfair').value;
+
+            if (!key) {
+                alert("Please enter a key for decryption.");
+                document.getElementById('decryptedResultPlayfair').value = "";
+                return;
+            }
+
+            // Ensure matrix is generated for this key
+            playfairMatrix = generatePlayfairMatrix(key);
+            displayMatrix(playfairMatrix); // Update matrix display
+
+            // Ciphertext must be in digraphs (even length, only A-Z, no J)
+            let processedCipherText = cipherText.toUpperCase().replace(/J/g, 'I').replace(/[^A-Z]/g, '');
+            if (processedCipherText.length % 2 !== 0) {
+                alert("Ciphertext must have an even number of characters after cleaning.");
+                document.getElementById('decryptedResultPlayfair').value = "Error: Invalid Ciphertext Length.";
+                return;
+            }
+
+            let plainText = [];
+            for (let i = 0; i < processedCipherText.length; i += 2) {
+                const char1 = processedCipherText[i];
+                const char2 = processedCipherText[i + 1];
+
+                const [r1, c1] = findCharPosition(char1, playfairMatrix);
+                const [r2, c2] = findCharPosition(char2, playfairMatrix);
+
+                if (r1 === r2) { // Same row
+                    plainText.push(playfairMatrix[r1][(c1 - 1 + 5) % 5]);
+                    plainText.push(playfairMatrix[r2][(c2 - 1 + 5) % 5]);
+                } else if (c1 === c2) { // Same column
+                    plainText.push(playfairMatrix[(r1 - 1 + 5) % 5][c1]);
+                    plainText.push(playfairMatrix[(r2 - 1 + 5) % 5][c2]);
+                } else { // Rectangle
+                    plainText.push(playfairMatrix[r1][c2]);
+                    plainText.push(playfairMatrix[r2][c1]);
+                }
+            }
+            document.getElementById('decryptedResultPlayfair').value = plainText.join("");
+        }
+    </script>
+</body>
+</html>

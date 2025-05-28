@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transposition Cipher</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container">
+        <table class="table">
+            <tr><td style="text-align: center; font-weight: bold; font-size: 25px;">TRANSPOSITION CIPHER</td></tr>
+            <tr><td style="font-weight: bold; color: blue;">ENCRYPTION</td></tr>
+            <tr>
+                <td>
+                    <div class="mb-3">
+                        <label for="plainTextTransposition" class="form-label">Plain text:</label>
+                        <input type="text" class="form-control" id="plainTextTransposition" placeholder="Input Plain Text" required autofocus/>
+                    </div>
+                    <div class="mb-3">
+                        <label for="keyEncryptTransposition" class="form-label">Key (number of columns):</label>
+                        <input type="number" class="form-control" id="keyEncryptTransposition" placeholder="Input Key" required min="2"/>
+                    </div>
+                    <button type="button" class="btn btn-primary" onclick="encryptTransposition()">Encrypt</button>
+                    <div class="mt-3">
+                        <label for="encryptedResultTransposition" class="form-label">Encrypted Text:</label>
+                        <textarea class="form-control" id="encryptedResultTransposition" rows="3" readonly></textarea>
+                    </div>
+                </td>
+            </tr>
+            <tr><td style="font-weight: bold; color: blue;">DECRYPTION</td></tr>
+            <tr>
+                <td>
+                    <div class="mb-3">
+                        <label for="cipherTextTransposition" class="form-label">Cipher text:</label>
+                        <input type="text" class="form-control" id="cipherTextTransposition" placeholder="Input Cipher Text" required/>
+                    </div>
+                    <div class="mb-3">
+                        <label for="keyDecryptTransposition" class="form-label">Key (number of columns):</label>
+                        <input type="number" class="form-control" id="keyDecryptTransposition" placeholder="Input Key" required min="2"/>
+                    </div>
+                    <button type="button" class="btn btn-success" onclick="decryptTransposition()">Decrypt</button>
+                    <div class="mt-3">
+                        <label for="decryptedResultTransposition" class="form-label">Decrypted Text:</label>
+                        <textarea class="form-control" id="decryptedResultTransposition" rows="3" readonly></textarea>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <script>
+        /**
+         * Cleans the input text for Transposition Cipher by removing non-alphanumeric characters and spaces.
+         * Converts to uppercase.
+         * @param {string} text
+         * @returns {string} Cleaned text.
+         */
+        function cleanTextTransposition(text) {
+            return text.toUpperCase().replace(/[^A-Z0-9]/g, ''); // Keep only A-Z and 0-9
+        }
+
+        /**
+         * Encrypts text using the Transposition Cipher.
+         */
+        function encryptTransposition() {
+            const plainTextRaw = document.getElementById('plainTextTransposition').value;
+            const key = parseInt(document.getElementById('keyEncryptTransposition').value);
+
+            if (key < 2) {
+                alert("Key (number of columns) must be 2 or greater for Transposition Cipher.");
+                document.getElementById('encryptedResultTransposition').value = "";
+                return;
+            }
+            if (!plainTextRaw) {
+                alert("Please enter plaintext to encrypt.");
+                document.getElementById('encryptedResultTransposition').value = "";
+                return;
+            }
+
+            const plainText = cleanTextTransposition(plainTextRaw);
+            const textLen = plainText.length;
+
+            // Calculate number of rows needed
+            const numRows = Math.ceil(textLen / key);
+
+            // Create a 2D array to represent the grid
+            const grid = Array.from({ length: numRows }, () => Array(key).fill(''));
+
+            let charIndex = 0;
+            // Fill the grid row by row
+            for (let r = 0; r < numRows; r++) {
+                for (let c = 0; c < key; c++) {
+                    if (charIndex < textLen) {
+                        grid[r][c] = plainText[charIndex];
+                        charIndex++;
+                    } else {
+                        grid[r][c] = 'X'; // Pad with 'X' if text is shorter than grid
+                    }
+                }
+            }
+
+            // Read off the ciphertext column by column
+            let cipherText = '';
+            for (let c = 0; c < key; c++) { // Iterate through columns
+                for (let r = 0; r < numRows; r++) { // Iterate through rows
+                    cipherText += grid[r][c];
+                }
+            }
+
+            document.getElementById('encryptedResultTransposition').value = cipherText;
+
+            // Auto-fill decryption fields
+            document.getElementById('cipherTextTransposition').value = cipherText;
+            document.getElementById('keyDecryptTransposition').value = key;
+        }
+
+        /**
+         * Decrypts text using the Transposition Cipher.
+         */
+        function decryptTransposition() {
+            const cipherTextRaw = document.getElementById('cipherTextTransposition').value;
+            const key = parseInt(document.getElementById('keyDecryptTransposition').value);
+
+            if (key < 2) {
+                alert("Key (number of columns) must be 2 or greater for Transposition Cipher.");
+                document.getElementById('decryptedResultTransposition').value = "";
+                return;
+            }
+            if (!cipherTextRaw) {
+                alert("Please enter ciphertext to decrypt.");
+                document.getElementById('decryptedResultTransposition').value = "";
+                return;
+            }
+
+            const cipherText = cleanTextTransposition(cipherTextRaw);
+            const textLen = cipherText.length;
+
+            // Calculate number of rows needed
+            const numRows = Math.ceil(textLen / key);
+
+            // Create a 2D array to reconstruct the grid
+            const grid = Array.from({ length: numRows }, () => Array(key).fill(''));
+
+            let charIndex = 0;
+            // Fill the grid column by column with ciphertext
+            for (let c = 0; c < key; c++) { // Iterate through columns
+                for (let r = 0; r < numRows; r++) { // Iterate through rows
+                    if (charIndex < textLen) {
+                        grid[r][c] = cipherText[charIndex];
+                        charIndex++;
+                    }
+                }
+            }
+            
+            // Read off the plaintext row by row
+            let plainText = '';
+            for (let r = 0; r < numRows; r++) {
+                for (let c = 0; c < key; c++) {
+                    if (grid[r][c] !== '') { // Only append if not an empty padding
+                         plainText += grid[r][c];
+                    }
+                }
+            }
+            
+            // Remove any trailing 'X' padding if it was added during encryption
+            // This is a common heuristic, might need adjustment based on specific padding rules
+            if (plainText.endsWith('X') && plainText.length > 0) {
+                const originalPlainTextLength = plainTextRaw.replace(/[^A-Za-z0-9]/g, '').length;
+                if (plainText.length > originalPlainTextLength) {
+                    plainText = plainText.substring(0, originalPlainTextLength);
+                }
+            }
+
+            document.getElementById('decryptedResultTransposition').value = plainText;
+        }
+    </script>
+</body>
+</html>
